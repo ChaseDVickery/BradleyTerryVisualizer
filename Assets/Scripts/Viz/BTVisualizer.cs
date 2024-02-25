@@ -58,6 +58,8 @@ public class BTVisualizer : MonoBehaviour
 
     private DeltaPoint prevHover;
 
+    public bool normalizedScale = false;
+
 
     // Interactability fields
     private bool _activeUpdating = false;
@@ -79,6 +81,17 @@ public class BTVisualizer : MonoBehaviour
             }
             return _setDeltaPointLocations;
         }
+    }
+
+    public void SetNormalizedScale(bool normalized) {
+        normalizedScale = normalized;
+        scaleBar.normalized = normalizedScale;
+        UpdateVizualization();
+    }
+    public void ToggleNormalizedScale() {
+        normalizedScale = !normalizedScale;
+        scaleBar.normalized = normalizedScale;
+        UpdateVizualization();
     }
 
     // Convert world point to point in delta space
@@ -176,8 +189,8 @@ public class BTVisualizer : MonoBehaviour
         double max = probabilities.Row(0).AbsoluteMaximum();
         double min = probabilities.Row(0).AbsoluteMinimum();
         // Debug.Log($"Minprob: {min}\nMaxprob: {max}");
-        if (max == min) { return; }
-        probabilities = (probabilities - min) / (max - min);
+        if (max == min) { ClearVisualization(); return; }
+        if (!normalizedScale) { probabilities = (probabilities - min) / (max - min); }
         int location = 0;
         for (int x = 0; x < xSteps; x++) {
             for (int y = 0; y < ySteps; y++) {
@@ -186,6 +199,16 @@ public class BTVisualizer : MonoBehaviour
             }
         }
         scaleBar.UpdateScale(vizLocs[0,0].gradient, min, max);
+    }
+    private void ClearVisualization() {
+        int location = 0;
+        for (int x = 0; x < xSteps; x++) {
+            for (int y = 0; y < ySteps; y++) {
+                vizLocs[x,y].SetIntensity(0);
+                location += 1;
+            }
+        }
+        scaleBar.UpdateScale(vizLocs[0,0].gradient, 0, 0);
     }
 
     public void AddDeltaPointAt(DeltaPoint p) {
