@@ -83,6 +83,42 @@ public class BTVisualizer : MonoBehaviour
         }
     }
 
+    public Slider xlimSlider;
+    public Slider ylimSlider;
+    public Slider stepSlider;
+    private Vector2 orig_xlim = new Vector2(-1f, 1f);
+    private Vector2 orig_ylim = new Vector2(-1f, 1f);
+    private float orig_step = 0.1f;
+
+    private bool _panning = false;
+    private Vector3 clickPanPos;
+    private float orig_camSize;
+    private float orig_camZ;
+
+    public void RecenterCamera() {
+        cam.transform.position = new Vector3(0f, 0f, orig_camZ);
+        if (cam.orthographic) {
+            cam.orthographicSize = orig_camSize;
+        }
+    }
+    public void ResetSettings() {
+        xlim = orig_xlim;
+        ylim = orig_ylim;
+        step = orig_step;
+        if (xlimSlider != null) { xlimSlider.value = xlim[1]; }
+        if (ylimSlider != null) { ylimSlider.value = ylim[1]; }
+        if (stepSlider != null) { stepSlider.value = step; }
+    }
+    public void SetXLim(float newVal) {
+        xlim = new Vector2(-newVal, newVal);
+    }
+    public void SetYLim(float newVal) {
+        ylim = new Vector2(-newVal, newVal);
+    }
+    public void SetStepSize(float newVal) {
+        step = newVal;
+    }
+
     public void SetNormalizedScale(bool normalized) {
         normalizedScale = normalized;
         scaleBar.normalized = normalizedScale;
@@ -110,12 +146,20 @@ public class BTVisualizer : MonoBehaviour
 
     void Awake() {
         if (deltaPoints == null) { deltaPoints = new List<DeltaPoint>(); }
+        orig_xlim = xlim;
+        orig_ylim = ylim;
+        orig_step = step;
+
+        cam = Camera.main;
+        orig_camZ = cam.transform.position.z;
+        if (cam.orthographic) {
+            orig_camSize = cam.orthographicSize;
+        }
     }
 
     // Start is called before the first frame update
     void Start()
     {
-        cam = Camera.main;
         numFeatures = 2;
         distribution = new BradleyTerryDistribution(numFeatures);
 
@@ -228,6 +272,14 @@ public class BTVisualizer : MonoBehaviour
         activeDeltaPoint = p;
     }
 
+    private void ZoomCam(float amount) {
+        if (cam.orthographic) {
+            cam.orthographicSize = Mathf.Max(1f, cam.orthographicSize + (amount));
+        } else {
+            cam.transform.Translate(new Vector3(0f, 0f, amount));
+        }
+    }
+
     void Update() {
         // dTemp = mag * dTemp.normalized;
         // dTemp = Quaternion.AngleAxis(Time.deltaTime*speed, Vector3.forward) * dTemp;
@@ -252,11 +304,19 @@ public class BTVisualizer : MonoBehaviour
         // distribution.AddDeltas(testDeltas);
         // UpdateVizualization();
 
-        if (cam.orthographic) {
-            cam.orthographicSize = Mathf.Max(1f, cam.orthographicSize + (Input.mouseScrollDelta.y * scrollSpeed));
-        } else {
-            cam.transform.Translate(new Vector3(0f, 0f, Input.mouseScrollDelta.y * scrollSpeed));
-        }
+        ZoomCam(Input.mouseScrollDelta.y * scrollSpeed);
+
+        // Right click
+        // if (Input.GetMouseButtonDown(1)) {
+        //     _panning = false;
+        //     clickPanPos = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
+        // } else if (Input.GetMouseButtonUp(1)) {
+        //     _panning = false;
+        // }
+        // if (_panning) {
+        //     clickPanPos = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
+        //     cam.transform.position = 
+        // }
 
         // Hover commands
         RaycastHit hoverhitInfo;
