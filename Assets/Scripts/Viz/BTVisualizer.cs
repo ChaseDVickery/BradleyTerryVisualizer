@@ -36,8 +36,8 @@ public class BTVisualizer : MonoBehaviour
     private Matrix<double> locations;    // [# locations x # features]
     private VizLocation[,] vizLocs;
 
-    private float xRange { get { return xlim[1] - xlim[0]; } }
-    private float yRange { get { return ylim[1] - ylim[0]; } }
+    public float xRange { get { return xlim[1] - xlim[0]; } }
+    public float yRange { get { return ylim[1] - ylim[0]; } }
 
     private int xSteps { get { return (int)Mathf.Round(xRange / step); } }
     private int ySteps { get { return (int)Mathf.Round(yRange / step); } }
@@ -89,6 +89,9 @@ public class BTVisualizer : MonoBehaviour
     private Vector2 orig_xlim = new Vector2(-1f, 1f);
     private Vector2 orig_ylim = new Vector2(-1f, 1f);
     private float orig_step = 0.1f;
+
+    // ConstraintBox
+    public ConstraintBox constraintBox;
 
     private bool _panning = false;
     private Vector3 clickPanPos;
@@ -220,12 +223,27 @@ public class BTVisualizer : MonoBehaviour
                 location += 1;
             }
         }
-        UpdateAxes();
+        UpdateVisualElements();
     }
+
+    private void UpdateVisualElements() {
+        UpdateAxes();
+        UpdateConstraintBox();
+    }
+
     private void UpdateAxes() {
         axes.SetToBounds(new Vector2(width, height));
         axes.UpdateXAxis(xlim);
         axes.UpdateYAxis(ylim);
+    }
+    public void UpdateConstraintBox() {
+        Vector2 origin = DToGSpace(Vector2.zero);
+        constraintBox.CreateBox(
+            DToGSpace(new Vector2(-constraintBox.bounds.x, constraintBox.bounds.y)),
+            DToGSpace(new Vector2(constraintBox.bounds.x, constraintBox.bounds.y)),
+            DToGSpace(new Vector2(constraintBox.bounds.x, -constraintBox.bounds.y)),
+            DToGSpace(new Vector2(-constraintBox.bounds.x, -constraintBox.bounds.y))
+        );
     }
 
     public void UpdateVizualization() {
@@ -259,6 +277,7 @@ public class BTVisualizer : MonoBehaviour
         _dirtyDeltaPoints = true;
         deltaPoints.Add(p);
         distribution.SetDeltas(setDeltaPointLocations);
+        p.HideDetails();
     }
 
     private void MakeActiveDeltaPoint() {
@@ -319,6 +338,7 @@ public class BTVisualizer : MonoBehaviour
         // }
 
         // Hover commands
+        if (!_activeUpdating) {
         RaycastHit hoverhitInfo;
         Ray hoverray = cam.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(hoverray, out hoverhitInfo)) {
@@ -345,6 +365,7 @@ public class BTVisualizer : MonoBehaviour
                 prevHover = null;
             }
         }
+        }
 
         if (Input.GetKeyDown(KeyCode.Space)) {
             _activeUpdating = !_activeUpdating;
@@ -370,6 +391,8 @@ public class BTVisualizer : MonoBehaviour
             distribution.SetTempDeltas(tempDeltas);
             UpdateVizualization();
 
+            activeDeltaPoint.UpdateDetails();
+
             if (Input.GetMouseButtonDown(0)) {
                 AddDeltaPointAt(activeDeltaPoint);
                 MakeActiveDeltaPoint();
@@ -388,6 +411,7 @@ public class BTVisualizer : MonoBehaviour
                         _activeUpdating = true;
                         _dirtyDeltaPoints = true;
                         distribution.SetDeltas(setDeltaPointLocations);
+                        p.ShowDetails();
                     }
                 }
             }
