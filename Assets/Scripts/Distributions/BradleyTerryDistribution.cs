@@ -20,6 +20,39 @@ namespace Distributions {
         private Matrix<double> cachedDeltas;
         private Matrix<double> tempDeltas;
 
+        private Matrix<double> _allDeltas;
+        private Matrix<double> allDeltas {
+            get {
+                if (_dirtyCache) {
+                    _dirtyCache = false;
+                    _allDeltas = GetCalculatedDeltas();
+                    if (allDeltas == null) {
+                        _allDeltas = Matrix<double>.Build.DenseOfMatrix(deltas);
+                    }
+                    else {
+                        _allDeltas = deltas.Stack(_allDeltas);
+                    }
+                    if (tempDeltas != null) {
+                        _allDeltas = _allDeltas.Stack(tempDeltas);
+                    }
+                }
+                return _allDeltas;
+            }
+        }
+        private int tempDeltaRowStart {
+            get {
+                int idx = 0;
+                Matrix<double> trajDeltas = GetCalculatedDeltas();
+                if (trajDeltas != null) {
+                    idx += trajDeltas.RowCount;
+                }
+                if (deltas != null) {
+                    idx += deltas.RowCount;
+                }
+                return idx;
+            }
+        }
+
         private int numFeatures = 1;
 
         public BradleyTerryDistribution(int nFeatures) {
@@ -51,11 +84,33 @@ namespace Distributions {
             _dirtyCache = true;
         }
 
+        public void OverwriteTempDeltas(double[,] temps) {
+            if (tempDeltas == null) {
+                SetTempDeltas(Matrix<double>.Build.DenseOfArray(temps));
+                return;
+            }
+
+            if (temps.GetLength(0) != tempDeltas.RowCount) {
+                Debug.LogError($"Given temp deltas have count {temps.GetLength(0)} while current temp deltas have count {tempDeltas.RowCount}");
+                return;
+            }
+            // Copy values into the existing matrix
+            for (int i = 0; i < temps.GetLength(0); i++) {
+                for (int j = 0; j < temps.GetLength(1); j++) {
+                    tempDeltas.At(i, j, temps[i,j]);
+                    allDeltas.At(i+tempDeltaRowStart, j, temps[i,j]);
+                    // tempDeltas.SetRow(i, temps[i]);
+                }
+            }
+            // 
+        }
         public void SetTempDeltas(Matrix<double> temps) {
             tempDeltas = Matrix<double>.Build.DenseOfMatrix(temps);
+            _dirtyCache = true;
         }
         public void ClearTempDeltas() {
             tempDeltas = null;
+            _dirtyCache = true;
         }
 
         public void ClearDeltas() {
@@ -74,7 +129,7 @@ namespace Distributions {
             // if (cachedDeltas == null || _dirtyCache) {
             //     return null;
             // }
-            _dirtyCache = false;
+            // _dirtyCache = false;
             return null;
         }
 
@@ -89,14 +144,16 @@ namespace Distributions {
         // Computes the log-likelihood for each particle using the current distribution
         public Matrix<double> ComputeLogLikelihood(Matrix<double> particles) {
             // Combine preferences with current deltas
-            Matrix<double> allDeltas = GetCalculatedDeltas();
-            if (allDeltas == null) { allDeltas = Matrix<double>.Build.DenseOfMatrix(deltas); }
-            else {
-                allDeltas = deltas.Stack(allDeltas);
-            }
-            if (tempDeltas != null) {
-                allDeltas = allDeltas.Stack(tempDeltas);
-            }
+            // Matrix<double> allDeltas = GetCalculatedDeltas();
+            // if (allDeltas == null) {
+            //     allDeltas = Matrix<double>.Build.DenseOfMatrix(deltas);
+            // }
+            // else {
+            //     allDeltas = deltas.Stack(allDeltas);
+            // }
+            // if (tempDeltas != null) {
+            //     allDeltas = allDeltas.Stack(tempDeltas);
+            // }
             // Perform calculation
             Matrix<double> jointLogprob = Matrix<double>.Build.DenseOfRowArrays(
                 Matrix<double>.Log(GetPrefLikelihoodDeltas(allDeltas, particles))

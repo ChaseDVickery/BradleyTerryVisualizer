@@ -8,14 +8,8 @@ using Distributions;
 using TMPro;
 
 [RequireComponent(typeof(LineRenderer))]
-public class DeltaPoint : MonoBehaviour
+public class DeltaPoint : Marker
 {
-    public Vector2 dSpaceLocation {
-        get { return visualizer.GToDSpace(new Vector2(transform.position.x, transform.position.y)); }
-    }
-    public bool activeUpdating;
-    public BTVisualizer visualizer;
-
     public TMP_Text detailText;
     private LineRenderer lineRenderer;
 
@@ -23,7 +17,7 @@ public class DeltaPoint : MonoBehaviour
         lineRenderer = GetComponent<LineRenderer>();
     }
 
-    public void UpdateDetails() {
+    public override void UpdateDetails() {
         if (detailText == null) { return; }
 
         detailText.text = $"({dSpaceLocation.x.ToString("F3")},{dSpaceLocation.y.ToString("F3")})";
@@ -37,11 +31,11 @@ public class DeltaPoint : MonoBehaviour
         });
     }
 
-    public void ShowDetails() {
+    public override void ShowDetails() {
         if (detailText != null) { detailText.gameObject.SetActive(true); }
         lineRenderer.enabled = true;
     }
-    public void HideDetails() {
+    public override void HideDetails() {
         if (detailText != null) { detailText.gameObject.SetActive(false); }
         lineRenderer.enabled = false;
     }

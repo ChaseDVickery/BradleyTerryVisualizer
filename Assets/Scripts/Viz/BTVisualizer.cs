@@ -12,6 +12,7 @@ public class BTVisualizer : MonoBehaviour
 {
     public GameObject vizLocationPrefab;
     public GameObject deltaPointPrefab;
+    public GameObject visualMarkerPrefab;
     public Vector2 xlim = new Vector2(-1f, 1f);
     public Vector2 ylim = new Vector2(-1f, 1f);
     public float step = 0.1f;
@@ -56,14 +57,14 @@ public class BTVisualizer : MonoBehaviour
     public ScaleBar scaleBar;
     public Axes axes;
 
-    private DeltaPoint prevHover;
+    private Marker prevHover;
 
     public bool normalizedScale = false;
 
 
     // Interactability fields
     private bool _activeUpdating = false;
-    private DeltaPoint activeDeltaPoint;
+    private Marker activeMarker;
     public List<DeltaPoint> deltaPoints;
     private bool _dirtyDeltaPoints = true;
     private Matrix<double> _setDeltaPointLocations;
@@ -97,6 +98,13 @@ public class BTVisualizer : MonoBehaviour
     private Vector3 clickPanPos;
     private float orig_camSize;
     private float orig_camZ;
+
+    private double[,] tds;
+    private Matrix<double> tempDeltas;
+
+    [Header("Grid Snap")]
+    public bool snapMarkersToGrid = false;
+    public float gridSpacing = 0.05f;
 
     public void RecenterCamera() {
         cam.transform.position = new Vector3(0f, 0f, orig_camZ);
@@ -133,6 +141,13 @@ public class BTVisualizer : MonoBehaviour
         UpdateVizualization();
     }
 
+    public void SetSnapGridSpacing(float newSpacing) {
+        gridSpacing = newSpacing;
+    }
+    public void SetSnapToGrid(bool toThis) {
+        snapMarkersToGrid = toThis;
+    }
+
     // Convert world point to point in delta space
     public Vector2 GToDSpace(Vector2 worldPoint) {
         return new Vector2(
@@ -158,6 +173,11 @@ public class BTVisualizer : MonoBehaviour
         if (cam.orthographic) {
             orig_camSize = cam.orthographicSize;
         }
+
+        tds = new double[,]{
+            {0.0, 0.0},
+        };
+        tempDeltas = Matrix<double>.Build.DenseOfArray(tds);
     }
 
     // Start is called before the first frame update
@@ -178,8 +198,8 @@ public class BTVisualizer : MonoBehaviour
         distribution.SetDeltas(setDeltaPointLocations);
 
         _activeUpdating = false;
-        if (activeDeltaPoint != null) { Destroy(activeDeltaPoint.gameObject); }
-        activeDeltaPoint = null;
+        if (activeMarker != null) { Destroy(activeMarker.gameObject); }
+        activeMarker = null;
         distribution.ClearTempDeltas();
 
         UpdateVizualization();
@@ -279,16 +299,27 @@ public class BTVisualizer : MonoBehaviour
         distribution.SetDeltas(setDeltaPointLocations);
         p.HideDetails();
     }
+    public void AddVisualMarkerAt(VisualMarker v) {
+        v.HideDetails();
+    }
 
     private void MakeActiveDeltaPoint() {
         Vector3 point = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
         GameObject newDeltaPoint = Instantiate(deltaPointPrefab, point, Quaternion.identity, transform);
         DeltaPoint dp = newDeltaPoint.GetComponent<DeltaPoint>();
         dp.visualizer = this;
-        SetActiveDeltaPoint(dp);
+        SetActiveMarker(dp);
     }
-    public void SetActiveDeltaPoint(DeltaPoint p) {
-        activeDeltaPoint = p;
+    private void MakeActiveVisualMarker() {
+        Vector3 point = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
+        GameObject newMarker = Instantiate(visualMarkerPrefab, point, Quaternion.identity, transform);
+        VisualMarker vm = newMarker.GetComponent<VisualMarker>();
+        vm.visualizer = this;
+        SetActiveMarker(vm);
+    }
+
+    public void SetActiveMarker(Marker m) {
+        activeMarker = m;
     }
 
     private void ZoomCam(float amount) {
@@ -300,49 +331,15 @@ public class BTVisualizer : MonoBehaviour
     }
 
     void Update() {
-        // dTemp = mag * dTemp.normalized;
-        // dTemp = Quaternion.AngleAxis(Time.deltaTime*speed, Vector3.forward) * dTemp;
-        // distribution.ClearDeltas();
-        // Matrix<double> testDeltas = Matrix<double>.Build.DenseOfArray(new double[,]{
-        //     {dTemp.x, dTemp.y},
-        // });
-        // distribution.AddDeltas(defDeltas);
-        // distribution.AddDeltas(testDeltas);
-        // UpdateVizualization();
-
-        // Camera cam = Camera.main;
-
-        // Vector3 point = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
-        // dTemp = GToDSpace(new Vector2(point.x, point.y));
-        // Debug.Log($"MousePosition: {Input.mousePosition}\nWorld Position: {point}\nDelta Position: {dTemp}");
-        // distribution.ClearDeltas();
-        // Matrix<double> testDeltas = Matrix<double>.Build.DenseOfArray(new double[,]{
-        //     {dTemp.x, dTemp.y},
-        // });
-        // distribution.AddDeltas(defDeltas);
-        // distribution.AddDeltas(testDeltas);
-        // UpdateVizualization();
-
+        // Camera Zooming
         ZoomCam(Input.mouseScrollDelta.y * scrollSpeed);
-
-        // Right click
-        // if (Input.GetMouseButtonDown(1)) {
-        //     _panning = false;
-        //     clickPanPos = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
-        // } else if (Input.GetMouseButtonUp(1)) {
-        //     _panning = false;
-        // }
-        // if (_panning) {
-        //     clickPanPos = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
-        //     cam.transform.position = 
-        // }
 
         // Hover commands
         if (!_activeUpdating) {
         RaycastHit hoverhitInfo;
         Ray hoverray = cam.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(hoverray, out hoverhitInfo)) {
-            DeltaPoint p = hoverhitInfo.transform.GetComponent<DeltaPoint>();
+            Marker p = hoverhitInfo.transform.GetComponent<Marker>();
             if (p != null) {
                 if (prevHover == p) {
                     p.UpdateDetails();
@@ -369,34 +366,17 @@ public class BTVisualizer : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space)) {
             _activeUpdating = !_activeUpdating;
-            if (!_activeUpdating) {
-                if (activeDeltaPoint != null) { Destroy(activeDeltaPoint.gameObject); }
-                activeDeltaPoint = null;
-                distribution.ClearTempDeltas();
-                UpdateVizualization();
-            }
-            else {
-                MakeActiveDeltaPoint();
-            }
+            if (!_activeUpdating) { DeselectActiveMarker(); }
+            else { MakeActiveDeltaPoint(); }
         }
+        else if (Input.GetKeyDown(KeyCode.Alpha1)) {
+            _activeUpdating = !_activeUpdating;
+            if (!_activeUpdating) { DeselectActiveMarker(); }
+            else { MakeActiveVisualMarker(); }
+        }
+
         if (_activeUpdating) {
-            if (activeDeltaPoint == null) {return;}
-            // Update active delta point position
-            activeDeltaPoint.transform.position = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
-            // Update the delta
-            Vector2 activeLoc = activeDeltaPoint.dSpaceLocation;
-            Matrix<double> tempDeltas = Matrix<double>.Build.DenseOfArray(new double[,]{
-                {activeLoc.x, activeLoc.y},
-            });
-            distribution.SetTempDeltas(tempDeltas);
-            UpdateVizualization();
-
-            activeDeltaPoint.UpdateDetails();
-
-            if (Input.GetMouseButtonDown(0)) {
-                AddDeltaPointAt(activeDeltaPoint);
-                MakeActiveDeltaPoint();
-            }
+            ActiveUpdateMarker(activeMarker);
         }
         // Be on the lookout for other iteractions if not updating a point
         else {
@@ -404,17 +384,98 @@ public class BTVisualizer : MonoBehaviour
                 RaycastHit hitInfo;
                 Ray ray = cam.ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(ray, out hitInfo)) {
-                    DeltaPoint p = hitInfo.transform.GetComponent<DeltaPoint>();
+                    Marker p = hitInfo.transform.GetComponent<Marker>();
                     if (p != null) {
-                        deltaPoints.Remove(p);
-                        SetActiveDeltaPoint(p);
-                        _activeUpdating = true;
-                        _dirtyDeltaPoints = true;
-                        distribution.SetDeltas(setDeltaPointLocations);
-                        p.ShowDetails();
+                        SelectMarker(p);
                     }
                 }
             }
+        }
+    }
+
+    private void DeselectActiveMarker() {
+        DeltaPoint p = activeMarker as DeltaPoint;
+        if (p != null) {
+            distribution.ClearTempDeltas();
+            UpdateVizualization();
+        }
+
+        if (activeMarker != null) { Destroy(activeMarker.gameObject); }
+        activeMarker = null;
+    }
+
+    private void SelectMarker(Marker m) {
+        if (m == null) { return; }
+        SetActiveMarker(m);
+
+        DeltaPoint p = m as DeltaPoint;
+        if (p != null) {
+            deltaPoints.Remove(p);
+            _activeUpdating = true;
+            _dirtyDeltaPoints = true;
+            distribution.SetDeltas(setDeltaPointLocations);
+            p.ShowDetails();
+        }
+
+        VisualMarker v = m as VisualMarker;
+        if (v != null) {
+            _activeUpdating = true;
+            v.ShowDetails();
+        }
+    }
+
+    private void ActiveUpdateMarker(Marker m) {
+        if (m == null) { return; }
+
+        DeltaPoint p = m as DeltaPoint;
+        if (p != null) {
+            // Update active delta point position
+            UpdateMarkerPosition(p);
+            // Update the delta
+            Vector2 activeLoc = p.dSpaceLocation;
+            tempDeltas.At(0,0, activeLoc.x);
+            tempDeltas.At(0,1, activeLoc.y);
+            distribution.SetTempDeltas(tempDeltas);
+
+            // tds[0,0] = activeLoc.x;
+            // tds[0,1] = activeLoc.y;
+            // distribution.OverwriteTempDeltas(tds);
+            
+            UpdateVizualization();
+            p.UpdateDetails();
+
+            if (Input.GetMouseButtonDown(0)) {
+                AddDeltaPointAt(p);
+                MakeActiveDeltaPoint();
+            }
+        }
+        
+        VisualMarker v = m as VisualMarker;
+        if (v != null) {
+            // Update active delta point position
+            UpdateMarkerPosition(v);
+            v.UpdateDetails();
+
+            if (Input.GetMouseButtonDown(0)) {
+                AddVisualMarkerAt(v);
+                MakeActiveVisualMarker();
+            }
+        }
+    }
+
+    private void UpdateMarkerPosition(Marker m) {
+        if (snapMarkersToGrid) {
+            Vector3 gSpaceMousePos = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
+            Vector2 dSpaceMousePos = GToDSpace(gSpaceMousePos);
+            // Round in d-space
+            Vector2 unitSpacingVector = dSpaceMousePos / gridSpacing;
+            Vector2 snappedGPos = DToGSpace(new Vector2(
+                gridSpacing*Mathf.Round(unitSpacingVector.x),
+                gridSpacing*Mathf.Round(unitSpacingVector.y)
+            ));
+            m.transform.position = new Vector3(snappedGPos.x, snappedGPos.y, 0f);
+        } else {
+            m.transform.position = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
         }
     }
 }
