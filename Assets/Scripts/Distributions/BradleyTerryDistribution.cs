@@ -26,14 +26,20 @@ namespace Distributions {
                 if (_dirtyCache) {
                     _dirtyCache = false;
                     _allDeltas = GetCalculatedDeltas();
-                    if (allDeltas == null) {
-                        _allDeltas = Matrix<double>.Build.DenseOfMatrix(deltas);
-                    }
-                    else {
-                        _allDeltas = deltas.Stack(_allDeltas);
+                    if (deltas != null) {
+                        if (allDeltas == null) {
+                            _allDeltas = Matrix<double>.Build.DenseOfMatrix(deltas);
+                        }
+                        else {
+                            _allDeltas = deltas.Stack(_allDeltas);
+                        }
                     }
                     if (tempDeltas != null) {
-                        _allDeltas = _allDeltas.Stack(tempDeltas);
+                        if (_allDeltas == null) {
+                            _allDeltas = Matrix<double>.Build.DenseOfMatrix(tempDeltas);
+                        } else {
+                            _allDeltas = _allDeltas.Stack(tempDeltas);
+                        }
                     }
                 }
                 return _allDeltas;
@@ -119,10 +125,14 @@ namespace Distributions {
         }
 
         public Matrix<double> LogProb(Matrix<double> particles) {
-            return ComputeLogLikelihood(particles);
+            Matrix<double> ll = ComputeLogLikelihood(particles);
+            if (ll == null) { return null; }
+            return ll;
         }
         public Matrix<double> Prob(Matrix<double> particles) {
-            return Matrix<double>.Exp(ComputeLogLikelihood(particles));
+            Matrix<double> ll = ComputeLogLikelihood(particles);
+            if (ll == null) { return null; }
+            return Matrix<double>.Exp(ll);
         }
 
         private Matrix<double> GetCalculatedDeltas() {
@@ -154,6 +164,7 @@ namespace Distributions {
             // if (tempDeltas != null) {
             //     allDeltas = allDeltas.Stack(tempDeltas);
             // }
+            if (allDeltas == null || particles == null) { return null; }
             // Perform calculation
             Matrix<double> jointLogprob = Matrix<double>.Build.DenseOfRowArrays(
                 Matrix<double>.Log(GetPrefLikelihoodDeltas(allDeltas, particles))

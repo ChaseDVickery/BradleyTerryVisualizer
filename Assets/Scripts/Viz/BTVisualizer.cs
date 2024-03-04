@@ -148,6 +148,18 @@ public class BTVisualizer : MonoBehaviour
         snapMarkersToGrid = toThis;
     }
 
+    public void ClearDistribution() {
+        foreach (DeltaPoint p in deltaPoints) {
+            Destroy(p.gameObject);
+        }
+        _dirtyDeltaPoints = true;
+        deltaPoints.Clear();
+
+        distribution.ClearDeltas();
+        distribution.ClearTempDeltas();
+        UpdateVizualization();
+    }
+
     // Convert world point to point in delta space
     public Vector2 GToDSpace(Vector2 worldPoint) {
         return new Vector2(
@@ -268,6 +280,7 @@ public class BTVisualizer : MonoBehaviour
 
     public void UpdateVizualization() {
         Matrix<double> probabilities = distribution.Prob(locations);
+        if (probabilities == null) { ClearVisualization(); return; }
         double max = probabilities.Row(0).AbsoluteMaximum();
         double min = probabilities.Row(0).AbsoluteMinimum();
         // Debug.Log($"Minprob: {min}\nMaxprob: {max}");
@@ -374,9 +387,18 @@ public class BTVisualizer : MonoBehaviour
             if (!_activeUpdating) { DeselectActiveMarker(); }
             else { MakeActiveVisualMarker(); }
         }
+        else if (Input.GetKeyDown(KeyCode.Q)) {
+            _activeUpdating = false;
+            if (!_activeUpdating) { DeselectActiveMarker(); }
+            ClearDistribution();
+        }
 
         if (_activeUpdating) {
             ActiveUpdateMarker(activeMarker);
+            if (Input.GetMouseButtonDown(1)) {
+                _activeUpdating = false;
+                DeselectActiveMarker();
+            }
         }
         // Be on the lookout for other iteractions if not updating a point
         else {
