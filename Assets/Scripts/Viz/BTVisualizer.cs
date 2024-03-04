@@ -13,6 +13,8 @@ public class BTVisualizer : MonoBehaviour
     public GameObject vizLocationPrefab;
     public GameObject deltaPointPrefab;
     public GameObject visualMarkerPrefab;
+    public GameObject linePrefab;
+    public GameObject lineHandlePrefab;
     public Vector2 xlim = new Vector2(-1f, 1f);
     public Vector2 ylim = new Vector2(-1f, 1f);
     public float step = 0.1f;
@@ -105,6 +107,8 @@ public class BTVisualizer : MonoBehaviour
     [Header("Grid Snap")]
     public bool snapMarkersToGrid = false;
     public float gridSpacing = 0.05f;
+
+    private Line workingLine;
 
     public void RecenterCamera() {
         cam.transform.position = new Vector3(0f, 0f, orig_camZ);
@@ -315,6 +319,9 @@ public class BTVisualizer : MonoBehaviour
     public void AddVisualMarkerAt(VisualMarker v) {
         v.HideDetails();
     }
+    public void AddLineHandleAt(LineHandle lh) {
+        lh.HideDetails();
+    }
 
     private void MakeActiveDeltaPoint() {
         Vector3 point = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
@@ -330,6 +337,25 @@ public class BTVisualizer : MonoBehaviour
         vm.visualizer = this;
         SetActiveMarker(vm);
     }
+    private void MakeActiveLineHandle() {
+        if (workingLine == null) { StartNewLine(); }
+        // Make new handle
+        Vector3 point = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
+        GameObject newMarker = Instantiate(lineHandlePrefab, point, Quaternion.identity, workingLine.transform);
+        LineHandle lh = newMarker.GetComponent<LineHandle>();
+        lh.visualizer = this;
+        SetActiveMarker(lh);
+        // Apply handle to working line, make a new working line if needed.
+        if (workingLine != null) {
+            if (workingLine.h1 == null) {
+                workingLine.h1 = lh;
+            }
+            else if (workingLine.h2 == null) {
+                workingLine.h2 = lh;
+                StartNewLine();
+            }
+        }
+    }
 
     public void SetActiveMarker(Marker m) {
         activeMarker = m;
@@ -341,6 +367,11 @@ public class BTVisualizer : MonoBehaviour
         } else {
             cam.transform.Translate(new Vector3(0f, 0f, amount));
         }
+    }
+
+    private void StartNewLine() {
+        GameObject newLine = Instantiate(linePrefab, transform);
+        workingLine = newLine.GetComponent<Line>();
     }
 
     void Update() {
@@ -392,6 +423,11 @@ public class BTVisualizer : MonoBehaviour
             if (!_activeUpdating) { DeselectActiveMarker(); }
             ClearDistribution();
         }
+        else if (Input.GetKeyDown(KeyCode.Alpha2)) {
+            _activeUpdating = !_activeUpdating;
+            if (!_activeUpdating) { DeselectActiveMarker(); }
+            else { MakeActiveLineHandle(); }
+        }
 
         if (_activeUpdating) {
             ActiveUpdateMarker(activeMarker);
@@ -422,6 +458,16 @@ public class BTVisualizer : MonoBehaviour
             UpdateVizualization();
         }
 
+        LineHandle lh = activeMarker as LineHandle;
+        if (lh != null) {
+            Line l = lh.line;
+            if (l != null) {
+                if (l.h1 != null) { Destroy(l.h1.gameObject); }
+                if (l.h2 != null) { Destroy(l.h2.gameObject); }
+                Destroy(l.gameObject);
+            }
+        }
+
         if (activeMarker != null) { Destroy(activeMarker.gameObject); }
         activeMarker = null;
     }
@@ -443,6 +489,12 @@ public class BTVisualizer : MonoBehaviour
         if (v != null) {
             _activeUpdating = true;
             v.ShowDetails();
+        }
+
+        LineHandle lh = m as LineHandle;
+        if (lh != null) {
+            _activeUpdating = true;
+            lh.ShowDetails();
         }
     }
 
@@ -481,6 +533,18 @@ public class BTVisualizer : MonoBehaviour
             if (Input.GetMouseButtonDown(0)) {
                 AddVisualMarkerAt(v);
                 MakeActiveVisualMarker();
+            }
+        }
+
+        LineHandle lh = m as LineHandle;
+        if (lh != null) {
+            // Update active delta point position
+            UpdateMarkerPosition(lh);
+            lh.UpdateDetails();
+
+            if (Input.GetMouseButtonDown(0)) {
+                AddLineHandleAt(lh);
+                MakeActiveLineHandle();
             }
         }
     }

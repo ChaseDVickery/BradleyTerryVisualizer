@@ -2599,7 +2599,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0.6314525, g: 0.70140123, b: 0.8113208, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -3154,6 +3154,8 @@ MonoBehaviour:
   vizLocationPrefab: {fileID: 2828758830177831823, guid: fd1ed31ca00f3a340a89245d542e72e0, type: 3}
   deltaPointPrefab: {fileID: 8801536529232961859, guid: e0f9b06018e39654aad3e7dc0d34749a, type: 3}
   visualMarkerPrefab: {fileID: 8801536529232961859, guid: 84e218ef4bdf44340aa6a1c42893287e, type: 3}
+  linePrefab: {fileID: 1227420113243511147, guid: ec6fde3890d7b1541bfcbcb873299c48, type: 3}
+  lineHandlePrefab: {fileID: 4902778442013227580, guid: 007a5b1323e7b3a41ad694dbda36fa78, type: 3}
   xlim: {x: -1, y: 1}
   ylim: {x: -1, y: 1}
   step: 0.05
@@ -3170,7 +3172,7 @@ MonoBehaviour:
   ylimSlider: {fileID: 727998858}
   stepSlider: {fileID: 772208018}
   constraintBox: {fileID: 1933285118}
-  snapMarkersToGrid: 0
+  snapMarkersToGrid: 1
   gridSpacing: 0.05
 --- !u!4 &571913411
 Transform:
@@ -4915,7 +4917,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_IsOn: 0
+  m_IsOn: 1
 --- !u!1 &992583593
 GameObject:
   m_ObjectHideFlags: 0
@@ -6052,8 +6054,11 @@ MonoBehaviour:
     <u>Left Click (Placement Mode)</u> - Add a new
     delta to the distribution.
 
-    <u>Left Click (Non-placement Mode)</u> - Click
-    existing deltas to select and move them. This puts you back in Placement Mode.
+    <u>Right Click (Placement Mode)</u> - Deselect/Delete
+    current marker
+
+    <u>Left Click (Non-placement Mode)</u> - Click existing deltas
+    to select and move them. This puts you back in Placement Mode.
 
     <u>Scroll
     Wheel</u> - Zoom in/out
@@ -6061,7 +6066,12 @@ MonoBehaviour:
     <u>Middle Click & Drag</u> - Pan camera
 
     <u>1
-    key</u> - Place visual markers'
+    key</u> - Place visual markers
+
+    <u>2 key</u> - Place visual line segments
+
+    <u>Q</u>
+    - Delete all placed deltas'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -6088,7 +6098,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 57.9
+  m_fontSize: 51.75
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -9181,7 +9191,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  m_IsOn: 0
+  m_IsOn: 1
 --- !u!1 &1859057535
 GameObject:
   m_ObjectHideFlags: 0
@@ -9657,7 +9667,7 @@ LineRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1933285116}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
