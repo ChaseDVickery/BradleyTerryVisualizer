@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-[RequireComponent(typeof(Canvas))]
+[RequireComponent(typeof(RectTransform))]
 public class Axes : MonoBehaviour {
 
     private Vector2 baseRatio;
@@ -25,10 +25,11 @@ public class Axes : MonoBehaviour {
 
     // Bounds is just the x and y range in global space
     public void SetToBounds(Vector2 bounds) {
-        // We know how many units this spans with width*scalex
-        Vector2 newShape = new Vector2( baseRatio.x * bounds.x, baseRatio.y * bounds.y);
-        // Debug.Log($"{newShape}");
-        rt.sizeDelta = newShape;
+        // // We know how many units this spans with width*scalex
+        // Vector2 newShape = new Vector2( baseRatio.x * bounds.x, baseRatio.y * bounds.y);
+        // // Debug.Log($"{newShape}");
+        // rt.sizeDelta = newShape;
+        rt.sizeDelta = new Vector2(bounds.x * 1/rt.lossyScale.x, bounds.y * 1/rt.lossyScale.y);
     }
 
     public void UpdateXAxis(Vector2 range) { xAxis.UpdateAxisRange(range); }

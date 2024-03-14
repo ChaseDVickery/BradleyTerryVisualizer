@@ -4,6 +4,7 @@ using UnityEngine;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using Distributions;
+using System.Linq;
 
 using UnityEngine.UI;
 using TMPro;
@@ -56,8 +57,11 @@ public class BTVisualizer : MonoBehaviour
     private Camera cam;
 
     // Visual Elements
+    [Header("Axes")]
     public ScaleBar scaleBar;
     public Axes axes;
+    [Header("Cross-Section Plotter")]
+    public LinePlotter linePlotter;
 
     private Marker prevHover;
 
@@ -282,8 +286,12 @@ public class BTVisualizer : MonoBehaviour
         );
     }
 
+    public Matrix<double> ProbabilityAt(Matrix<double> points) {
+        return distribution.Prob(points);
+    }
+
     public void UpdateVizualization() {
-        Matrix<double> probabilities = distribution.Prob(locations);
+        Matrix<double> probabilities = ProbabilityAt(locations);
         if (probabilities == null) { ClearVisualization(); return; }
         double max = probabilities.Row(0).AbsoluteMaximum();
         double min = probabilities.Row(0).AbsoluteMinimum();
@@ -355,6 +363,7 @@ public class BTVisualizer : MonoBehaviour
                 StartNewLine();
             }
         }
+        linePlotter.ShowDetails();
     }
 
     public void SetActiveMarker(Marker m) {
@@ -372,6 +381,58 @@ public class BTVisualizer : MonoBehaviour
     private void StartNewLine() {
         GameObject newLine = Instantiate(linePrefab, transform);
         workingLine = newLine.GetComponent<Line>();
+    }
+
+    private void UpdateCrossSection(LineHandle lh) {
+        if (lh.line.h1 == null || lh.line.h2 == null) { return; }
+        if (lh.line.h1.gSpaceLocation == lh.line.h2.gSpaceLocation) { return; }
+        Matrix<double> samplePoints = lh.line.SampleDSpaceMatrix(linePlotter.samples);
+        Matrix<double> probabilities = ProbabilityAt(samplePoints);
+        if (probabilities == null) { linePlotter.PlotZeroes(); return; }
+        double max = probabilities.Row(0).AbsoluteMaximum();
+        double min = probabilities.Row(0).AbsoluteMinimum();
+        if (!linePlotter.normalizedScale) { 
+            if (max == min) { linePlotter.PlotZeroes(); return; }
+            probabilities = (probabilities - min) / (max - min);
+        }
+        float[] values = new float[probabilities.RowCount*probabilities.ColumnCount];
+        for (int i = 0; i < probabilities.ColumnCount; i++) {
+            values[i] = (float)probabilities.At(0,i);
+        }
+        // float[] values = probabilities.Storage.ToRowMajorArray().Cast<float>().ToArray();
+        float plotterSizeX = Mathf.Max(
+            linePlotter.rescale ? linePlotter.sizeRescaleRatio * lh.line.segmentLengthG : linePlotter.minSize.x,
+            linePlotter.minSize.x
+        );
+        linePlotter.rt.sizeDelta = new Vector2(
+            plotterSizeX,
+            linePlotter.minSize.y
+        );
+        linePlotter.Plot( values );
+
+
+        // Plot at offset from handle location
+        // linePlotter.transform.position = lh.gSpaceLocation + linePlotter.offset;
+        // Plot at an orthogonal offset from midpoint
+        // linePlotter.transform.position = lh.line.midpointG + (1* (new Vector2(1f, lh.line.orthoSlopeG)).normalized);
+        // Plot in opposite direction from current handle
+        Vector2 d = lh.line.DiffToG(lh).normalized;
+        linePlotter.transform.position = lh.gSpaceLocation + (1* d);
+
+        if (linePlotter.rescale) {
+            // Scale plotter size with length of line
+            linePlotter.axes.SetToBounds(new Vector2(plotterSizeX, linePlotter.minSize.y));
+        } else {
+            // Have set plotter size
+            linePlotter.axes.SetToBounds(new Vector2(linePlotter.minSize.x, linePlotter.minSize.y));
+        }
+        linePlotter.axes.UpdateXAxis(0f, lh.line.segmentLengthD);
+
+        if (!linePlotter.normalizedScale) { 
+            linePlotter.axes.UpdateYAxis((float)min, (float)max);
+        } else { 
+            linePlotter.axes.UpdateYAxis(0f, 1f);
+        }
     }
 
     void Update() {
@@ -466,6 +527,7 @@ public class BTVisualizer : MonoBehaviour
                 if (l.h2 != null) { Destroy(l.h2.gameObject); }
                 Destroy(l.gameObject);
             }
+            linePlotter.HideDetails();
         }
 
         if (activeMarker != null) { Destroy(activeMarker.gameObject); }
@@ -495,6 +557,7 @@ public class BTVisualizer : MonoBehaviour
         if (lh != null) {
             _activeUpdating = true;
             lh.ShowDetails();
+            linePlotter.ShowDetails();
         }
     }
 
@@ -541,6 +604,7 @@ public class BTVisualizer : MonoBehaviour
             // Update active delta point position
             UpdateMarkerPosition(lh);
             lh.UpdateDetails();
+            UpdateCrossSection(lh);
 
             if (Input.GetMouseButtonDown(0)) {
                 AddLineHandleAt(lh);
