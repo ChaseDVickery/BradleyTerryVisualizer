@@ -448,22 +448,38 @@ public class BTVisualizer : MonoBehaviour
             if (p != null) {
                 if (prevHover == p) {
                     p.UpdateDetails();
-                }
-                else {
+                    LineHandle lh = p as LineHandle;
+                    if (lh != null) {
+                        UpdateCrossSection(lh);
+                    }
+                } else {
                     if (prevHover != null) { prevHover.HideDetails(); }
                     prevHover = p;
                     p.ShowDetails();
                     p.UpdateDetails();
+                    LineHandle lh = p as LineHandle;
+                    if (lh != null) {
+                        linePlotter.ShowDetails();
+                        UpdateCrossSection(lh);
+                    }
                 }
             } else {
                 if (prevHover != null) {
                     prevHover.HideDetails();
+                    LineHandle lh = prevHover as LineHandle;
+                    if (lh != null) {
+                        linePlotter.HideDetails();
+                    }
                     prevHover = null;
                 }
             }
         } else {
             if (prevHover != null) {
                 prevHover.HideDetails();
+                LineHandle lh = prevHover as LineHandle;
+                if (lh != null) {
+                    linePlotter.HideDetails();
+                }
                 prevHover = null;
             }
         }
