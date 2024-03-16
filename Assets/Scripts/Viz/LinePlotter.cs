@@ -37,6 +37,22 @@ public class LinePlotter : MonoBehaviour
         rt = GetComponent<RectTransform>();
     }
 
+    public void SetNormalizedScale(bool toThis) {
+        normalizedScale = toThis;
+    }
+    public void SetRescale(bool toThis) {
+        rescale = toThis;
+    }
+    public void SetRescaleRatio(float toThis) {
+        sizeRescaleRatio = toThis;
+    }
+    public void SetSamples(float toThis) {
+        SetSamples((int)Mathf.Round(toThis));
+    }
+    public void SetSamples(int toThis) {
+        samples = toThis;
+    }
+
     public void ShowDetails() {
         axes.gameObject.SetActive(true);
         lineRenderer.enabled = true;
