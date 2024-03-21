@@ -123,6 +123,12 @@ public class BTVisualizer : MonoBehaviour
     private bool focused = true;
     private bool shiftDown = false;
 
+    public List<Color> markerColors;
+    private int markerColorIdx = 0;
+    public Color currColor {
+        get { return markerColors[markerColorIdx]; }
+    }
+
     public void RecenterCamera() {
         cam.transform.position = new Vector3(0f, 0f, orig_camZ);
         if (cam.orthographic) {
@@ -412,6 +418,7 @@ public class BTVisualizer : MonoBehaviour
             }
             else if (workingLine.h2 == null) {
                 workingLine.h2 = lh;
+                lh.SetColor(workingLine.h1.currColor);
                 StartNewLine();
             }
         }
@@ -428,6 +435,10 @@ public class BTVisualizer : MonoBehaviour
 
     public void SetActiveMarker(Marker m) {
         activeMarker = m;
+    }
+
+    public void CycleMarkerColor() {
+        markerColorIdx = (markerColorIdx + 1)%markerColors.Count();
     }
 
     private void ZoomCam(float amount) {
@@ -556,6 +567,10 @@ public class BTVisualizer : MonoBehaviour
                 _activeUpdating = false;
                 DeselectActiveMarker();
             }
+            if (Input.GetKeyDown(KeyCode.Tab)) {
+                CycleMarkerColor();
+                activeMarker.SetColor(currColor);
+            }
         }
         // Be on the lookout for other iteractions if not updating a point
         else {
@@ -671,7 +686,6 @@ public class BTVisualizer : MonoBehaviour
     }
 
     private void SelectMarker(Marker m) {
-        Debug.Log($"Selecting marker object: {m.gameObject}");
         if (m == null) { return; }
         SetActiveMarker(m);
 

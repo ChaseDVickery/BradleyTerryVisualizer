@@ -336,7 +336,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6e9f0662a130ed489a62055c5f8bd99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activeUpdating: 0
+  spriteRenderer: {fileID: 625721163643141754}
   visualizer: {fileID: 0}
   detailText: {fileID: 2500159394521208304}
 --- !u!135 &4753844881873673264

@@ -10,6 +10,7 @@ using TMPro;
 public class TextMarker : Marker
 {
     public TMP_InputField textInput;
+    private bool focused = false;
 
     public override void Setup() {
         textInput.onDeselect.AddListener(OnDeselect);
@@ -20,6 +21,7 @@ public class TextMarker : Marker
     }
     IEnumerator DisableInput() {
         yield return new WaitForEndOfFrame();
+        focused = false;
         textInput.interactable = false;
     }
     
@@ -34,8 +36,22 @@ public class TextMarker : Marker
     }
 
     public void Focus() {
+        focused = true;
         textInput.interactable = true;
         textInput.Select();
         // textInput.ActivateInputField();
+    }
+
+    private void ChangeFontSize(int amount) {
+        textInput.pointSize = Mathf.Max(8, textInput.pointSize+amount);
+    }
+    void Update() {
+        // Accept controls if focused
+        if (focused) {
+            if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) {
+                if (Input.GetKeyDown(KeyCode.Equals)) { ChangeFontSize((5+((int)textInput.pointSize/10))); }
+                else if (Input.GetKeyDown(KeyCode.Minus)) { ChangeFontSize(-(5+((int)textInput.pointSize/10))); }
+            }
+        }
     }
 }

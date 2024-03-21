@@ -3838,6 +3838,11 @@ MonoBehaviour:
   constraintBox: {fileID: 1933285118}
   snapMarkersToGrid: 1
   gridSpacing: 0.05
+  markerColors:
+  - {r: 0, g: 0, b: 0, a: 1}
+  - {r: 1, g: 0, b: 0, a: 1}
+  - {r: 0.021978855, g: 0, b: 1, a: 1}
+  - {r: 0.06159973, g: 1, b: 0, a: 1}
 --- !u!4 &571913411
 Transform:
   m_ObjectHideFlags: 0
@@ -8046,8 +8051,14 @@ MonoBehaviour:
 
     <u>2 key</u> - Place visual line segments
 
-    <u>Shift+1/2/Space
-    - Clear all visual markers/line segments/deltas'
+    <u>Shift
+    + 1/2/Space</u> - Clear all visual markers/line segments/deltas
+
+    <u>Ctrl
+    + =/-</u> - Increase/Decrease selected text size
+
+    <u>Tab</u> - Change marker
+    color'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -8074,7 +8085,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 51.75
+  m_fontSize: 46.25
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -13676,8 +13687,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 256741693}
   - {fileID: 1237121922}
+  - {fileID: 256741693}
   m_Father: {fileID: 1903558311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

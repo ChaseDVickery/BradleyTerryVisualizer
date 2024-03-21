@@ -13,7 +13,8 @@ public class DeltaPoint : Marker
     public TMP_Text detailText;
     private LineRenderer lineRenderer;
 
-    void Awake() {
+    protected override void Awake() {
+        base.Awake();
         lineRenderer = GetComponent<LineRenderer>();
     }
 

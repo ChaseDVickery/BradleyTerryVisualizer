@@ -117,6 +117,11 @@ public class Line : MonoBehaviour
         lineRenderer.positionCount = 2;
     }
 
+    public void SetColor(Color c) {
+        lineRenderer.startColor = c;
+        lineRenderer.endColor = c;
+    }
+
     public void HideLine() { lineRenderer.enabled = false; }
     public void ShowLine() { lineRenderer.enabled = true; }
 

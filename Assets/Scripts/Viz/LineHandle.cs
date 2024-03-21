@@ -25,4 +25,18 @@ public class LineHandle : Marker
         if (detailText != null) { detailText.gameObject.SetActive(false); }
         // line.HideLine();
     }
+
+    public override void SetColor(Color newColor) {
+        if (line == null) {
+            base.SetColor(newColor);
+        } else {
+            line.SetColor(newColor);
+            if (line.h1 != null) { line.h1.SetColorEnd(newColor); }
+            if (line.h2 != null) { line.h2.SetColorEnd(newColor); }
+        }
+    }
+
+    public void SetColorEnd(Color newColor) {
+        base.SetColor(newColor);
+    }
 }
