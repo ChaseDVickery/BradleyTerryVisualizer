@@ -35,6 +35,7 @@ public class LinePlotter : MonoBehaviour
     void Awake() {
         lineRenderer = GetComponent<LineRenderer>();
         rt = GetComponent<RectTransform>();
+        HideDetails();
     }
 
     public void SetNormalizedScale(bool toThis) {

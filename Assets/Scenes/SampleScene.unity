@@ -8045,8 +8045,8 @@ MonoBehaviour:
 
     <u>2 key</u> - Place visual line segments
 
-    <u>Q</u>
-    - Delete all placed deltas'
+    <u>Shift+1/2/Space
+    - Clear all visual markers/line segments/deltas'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10696,7 +10696,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d26f0869cc72d8439599d57344a9c04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  snapPrecision: 0.01
+  snapPrecision: 0.05
 --- !u!1 &1646693668
 GameObject:
   m_ObjectHideFlags: 0
