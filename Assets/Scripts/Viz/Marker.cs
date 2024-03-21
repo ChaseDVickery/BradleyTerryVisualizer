@@ -14,4 +14,5 @@ public class Marker : MonoBehaviour {
     public virtual void UpdateDetails() { return; }
     public virtual void ShowDetails() { return; }
     public virtual void HideDetails() { return; }
+    public virtual void Setup() { return; }
 }

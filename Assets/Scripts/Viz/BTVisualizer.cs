@@ -16,6 +16,7 @@ public class BTVisualizer : MonoBehaviour
     public GameObject visualMarkerPrefab;
     public GameObject linePrefab;
     public GameObject lineHandlePrefab;
+    public GameObject textMarkerPrefab;
     public Vector2 xlim = new Vector2(-1f, 1f);
     public Vector2 ylim = new Vector2(-1f, 1f);
     public float step = 0.1f;
@@ -116,6 +117,10 @@ public class BTVisualizer : MonoBehaviour
 
     private List<VisualMarker> visualMarkers;
     private List<LineHandle> lineHandles;
+    private List<TextMarker> textMarkers;
+
+    private bool keyboardControlsEnabled = true;
+    private bool focused = true;
     private bool shiftDown = false;
 
     public void RecenterCamera() {
@@ -184,6 +189,12 @@ public class BTVisualizer : MonoBehaviour
         }
         lineHandles.Clear();
     }
+    public void ClearAllTextMarkers() {
+        foreach (TextMarker tm in textMarkers) {
+            DestroyMarker(tm);
+        }
+        textMarkers.Clear();
+    }
 
     // Convert world point to point in delta space
     public Vector2 GToDSpace(Vector2 worldPoint) {
@@ -203,6 +214,7 @@ public class BTVisualizer : MonoBehaviour
         if (deltaPoints == null) { deltaPoints = new List<DeltaPoint>(); }
         if (visualMarkers == null) { visualMarkers = new List<VisualMarker>(); }
         if (lineHandles == null) { lineHandles = new List<LineHandle>(); }
+        if (textMarkers == null) { textMarkers = new List<TextMarker>(); }
         orig_xlim = xlim;
         orig_ylim = ylim;
         orig_step = step;
@@ -337,6 +349,16 @@ public class BTVisualizer : MonoBehaviour
         scaleBar.UpdateScale(vizLocs[0,0].gradient, 0, 0);
     }
 
+    public void Unfocus() {
+        focused = false;
+        // keyboardControlsEnabled = false;
+    }
+    public void Focus() {
+        focused = true;
+        // keyboardControlsEnabled = true;
+    }
+
+    // MARKER CONTROL ADD
     public void AddDeltaPointAt(DeltaPoint p) {
         _dirtyDeltaPoints = true;
         deltaPoints.Add(p);
@@ -351,7 +373,16 @@ public class BTVisualizer : MonoBehaviour
         lineHandles.Add(lh);
         lh.HideDetails();
     }
+    public void AddTextMarkerAt(TextMarker tm) {
+        textMarkers.Add(tm);
+        this.Unfocus();
+        tm.Focus();
+        SetActiveMarker(null);
+        _activeUpdating = false;
+        // tm.ShowDetails();
+    }
 
+    // MARKER CONTROL INSTANTIATE
     private void MakeActiveDeltaPoint() {
         Vector3 point = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
         GameObject newDeltaPoint = Instantiate(deltaPointPrefab, point, Quaternion.identity, transform);
@@ -385,6 +416,14 @@ public class BTVisualizer : MonoBehaviour
             }
         }
         linePlotter.ShowDetails();
+    }
+    private void MakeActiveTextMarker() {
+        Vector3 point = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(cam.transform.position.z)));
+        GameObject newMarker = Instantiate(textMarkerPrefab, point, Quaternion.identity, transform);
+        TextMarker tm = newMarker.GetComponent<TextMarker>();
+        tm.visualizer = this;
+        tm.Setup();
+        SetActiveMarker(tm);
     }
 
     public void SetActiveMarker(Marker m) {
@@ -463,6 +502,8 @@ public class BTVisualizer : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) { shiftDown = true; }
         else { shiftDown = false; }
 
+        if (!focused) { return; }
+
         // Hover commands
         if (!_activeUpdating) {
         RaycastHit hoverhitInfo;
@@ -509,40 +550,6 @@ public class BTVisualizer : MonoBehaviour
         }
         }
 
-        if (shiftDown) {
-            if (Input.GetKeyDown(KeyCode.Space)) {
-                _activeUpdating = false;
-                if (!_activeUpdating) { DeselectActiveMarker(); }
-                ClearDistribution();
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha1)) {
-                _activeUpdating = false;
-                if (!_activeUpdating) { DeselectActiveMarker(); }
-                ClearAllVisualMarkers();
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha2)) {
-                _activeUpdating = false;
-                if (!_activeUpdating) { DeselectActiveMarker(); }
-                ClearAllLines();
-            }
-        } else {
-            if (Input.GetKeyDown(KeyCode.Space)) {
-                _activeUpdating = !_activeUpdating;
-                if (!_activeUpdating) { DeselectActiveMarker(); }
-                else { MakeActiveDeltaPoint(); }
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha1)) {
-                _activeUpdating = !_activeUpdating;
-                if (!_activeUpdating) { DeselectActiveMarker(); }
-                else { MakeActiveVisualMarker(); }
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha2)) {
-                _activeUpdating = !_activeUpdating;
-                if (!_activeUpdating) { DeselectActiveMarker(); }
-                else { MakeActiveLineHandle(); }
-            }
-        }
-
         if (_activeUpdating) {
             ActiveUpdateMarker(activeMarker);
             if (Input.GetMouseButtonDown(1)) {
@@ -563,6 +570,51 @@ public class BTVisualizer : MonoBehaviour
                 }
             }
         }
+
+        if (!keyboardControlsEnabled) { return; }
+        if (shiftDown) {
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                _activeUpdating = false;
+                if (!_activeUpdating) { DeselectActiveMarker(); }
+                ClearDistribution();
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha1)) {
+                _activeUpdating = false;
+                if (!_activeUpdating) { DeselectActiveMarker(); }
+                ClearAllVisualMarkers();
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2)) {
+                _activeUpdating = false;
+                if (!_activeUpdating) { DeselectActiveMarker(); }
+                ClearAllLines();
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3)) {
+                _activeUpdating = false;
+                if (!_activeUpdating) { DeselectActiveMarker(); }
+                ClearAllTextMarkers();
+            }
+        } else {
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                _activeUpdating = !_activeUpdating;
+                if (!_activeUpdating) { DeselectActiveMarker(); }
+                else { MakeActiveDeltaPoint(); }
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha1)) {
+                _activeUpdating = !_activeUpdating;
+                if (!_activeUpdating) { DeselectActiveMarker(); }
+                else { MakeActiveVisualMarker(); }
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2)) {
+                _activeUpdating = !_activeUpdating;
+                if (!_activeUpdating) { DeselectActiveMarker(); }
+                else { MakeActiveLineHandle(); }
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3)) {
+                _activeUpdating = !_activeUpdating;
+                if (!_activeUpdating) { DeselectActiveMarker(); }
+                else { MakeActiveTextMarker(); }
+            }
+        }
     }
 
     private void DestroyMarker(Marker m) {
@@ -578,6 +630,10 @@ public class BTVisualizer : MonoBehaviour
         if (lh != null) {
             if (lh.line != null) { Destroy(lh.line.gameObject); }
             Destroy(lh.gameObject);
+        }
+        TextMarker tm = m as TextMarker;
+        if (tm != null) {
+            Destroy(tm.gameObject);
         }
     }
 
@@ -604,11 +660,18 @@ public class BTVisualizer : MonoBehaviour
             visualMarkers.Remove(v);
         }
 
+        TextMarker tm = activeMarker as TextMarker;
+        if (tm != null) {
+            textMarkers.Remove(tm);
+            Focus();
+        }
+
         if (activeMarker != null) { Destroy(activeMarker.gameObject); }
         activeMarker = null;
     }
 
     private void SelectMarker(Marker m) {
+        Debug.Log($"Selecting marker object: {m.gameObject}");
         if (m == null) { return; }
         SetActiveMarker(m);
 
@@ -632,6 +695,12 @@ public class BTVisualizer : MonoBehaviour
             _activeUpdating = true;
             lh.ShowDetails();
             linePlotter.ShowDetails();
+        }
+
+        TextMarker tm = m as TextMarker;
+        if (tm != null) {
+            _activeUpdating = true;
+            tm.ShowDetails();
         }
     }
 
@@ -683,6 +752,17 @@ public class BTVisualizer : MonoBehaviour
             if (Input.GetMouseButtonDown(0)) {
                 AddLineHandleAt(lh);
                 MakeActiveLineHandle();
+            }
+        }
+
+        TextMarker tm = m as TextMarker;
+        if (tm != null) {
+            // Update active delta point position
+            UpdateMarkerPosition(tm);
+            tm.UpdateDetails();
+
+            if (Input.GetMouseButtonDown(0)) {
+                AddTextMarkerAt(tm);
             }
         }
     }

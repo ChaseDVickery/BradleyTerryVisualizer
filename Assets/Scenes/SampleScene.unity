@@ -3818,6 +3818,7 @@ MonoBehaviour:
   visualMarkerPrefab: {fileID: 8801536529232961859, guid: 84e218ef4bdf44340aa6a1c42893287e, type: 3}
   linePrefab: {fileID: 1227420113243511147, guid: ec6fde3890d7b1541bfcbcb873299c48, type: 3}
   lineHandlePrefab: {fileID: 4902778442013227580, guid: 007a5b1323e7b3a41ad694dbda36fa78, type: 3}
+  textMarkerPrefab: {fileID: 8801536529232961859, guid: 7638c34397b8afe4dac4a9233ea9f155, type: 3}
   xlim: {x: -1, y: 1}
   ylim: {x: -1, y: 1}
   step: 0.05
